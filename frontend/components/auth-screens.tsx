@@ -587,10 +587,10 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  onClick={onLogin}
-                  className={`h-12 font-medium transition-all duration-300 ${theme === "dark"
-                    ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
-                    : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                  disabled
+                  className={`h-12 font-medium transition-all duration-300 opacity-50 cursor-not-allowed ${theme === "dark"
+                    ? "border-slate-600 bg-slate-700 text-slate-400"
+                    : "border-slate-300 bg-white text-slate-500"
                     }`}
                 >
                   <Chrome className="mr-2 h-4 w-4" />
@@ -598,10 +598,10 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={onLogin}
-                  className={`h-12 font-medium transition-all duration-300 ${theme === "dark"
-                    ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
-                    : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                  disabled
+                  className={`h-12 font-medium transition-all duration-300 opacity-50 cursor-not-allowed ${theme === "dark"
+                    ? "border-slate-600 bg-slate-700 text-slate-400"
+                    : "border-slate-300 bg-white text-slate-500"
                     }`}
                 >
                   <Github className="mr-2 h-4 w-4" />

@@ -55,9 +55,11 @@ export default function VehicleParkingApp() {
 
   const handleLogin = () => {
     console.log('handleLogin called - redirecting to dashboard'); // Debug log
-    // Redirect to dashboard immediately after successful login
-    setCurrentScreen("dashboard")
-    console.log('Screen set to dashboard'); // Debug log
+    // Add a small delay to ensure auth context state is updated before redirect
+    setTimeout(() => {
+      setCurrentScreen("dashboard")
+      console.log('Screen set to dashboard'); // Debug log
+    }, 200) // Increased delay to ensure auth state is properly updated
   }
 
   const handleLogout = () => {

@@ -301,8 +301,17 @@ class ApiClient {
                 const data = await response.json();
                 console.log('Refresh token response:', data); // Debug log
                 if (data.success && data.data) {
-                    const { access_token, refresh_token } = data.data;
-                    TokenManager.setTokens(access_token, refresh_token || refreshToken);
+                    // Handle nested data structure from backend
+                    const tokenData = data.data.data || data.data;
+                    const access_token = tokenData.access_token;
+                    const refresh_token = tokenData.refresh_token;
+
+                    if (access_token) {
+                        TokenManager.setTokens(access_token, refresh_token || refreshToken);
+                    } else {
+                        console.error('No access token in refresh response:', tokenData);
+                        throw new Error('Token refresh failed - no access token');
+                    }
                 } else {
                     console.error('Invalid refresh response format:', data);
                     throw new Error('Token refresh failed - invalid response format');

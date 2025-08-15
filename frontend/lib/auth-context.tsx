@@ -77,7 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 throw new Error('Failed to fetch user profile');
             }
         } catch (error) {
-            console.error('Failed to refresh user:', error); 
+            console.error('Failed to refresh user:', error);
             TokenManager.clearTokens();
             setUser(null);
             throw error;
@@ -99,11 +99,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.success && response.data) {
                 const data = response.data as any;
-                const access_token = data.access_token;
-                const refresh_token = data.refresh_token;
+                // Handle nested data structure from backend
+                const tokenData = data.data || data;
+                const access_token = tokenData.access_token;
+                const refresh_token = tokenData.refresh_token;
 
                 if (!access_token || !refresh_token) {
-                    console.error('Missing tokens in response:', data);
+                    console.error('Missing tokens in response:', { data, tokenData });
                     return {
                         success: false,
                         error: 'Invalid response format: missing tokens'
@@ -159,11 +161,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.success && response.data) {
                 const data = response.data as any;
-                const access_token = data.access_token;
-                const refresh_token = data.refresh_token;
+                // Handle nested data structure from backend
+                const tokenData = data.data || data;
+                const access_token = tokenData.access_token;
+                const refresh_token = tokenData.refresh_token;
 
                 if (!access_token || !refresh_token) {
-                    console.error('Missing tokens in response:', data);
+                    console.error('Missing tokens in response:', { data, tokenData });
                     return {
                         success: false,
                         error: 'Invalid response format: missing tokens'
