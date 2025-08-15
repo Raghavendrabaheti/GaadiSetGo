@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -35,11 +36,67 @@ interface ParkingDashboardProps {
   theme: string
 }
 
+interface ParkingLot {
+  id: string
+  name: string
+  location: string
+  address?: string
+  total_capacity: number
+  current_available_spots: number
+  price_per_hour: number
+  distance?: string
+  rating?: number
+  features: string[]
+  image?: string
+}
+
+interface Vehicle {
+  id: string
+  make: string
+  model: string
+  registration_number: string
+  color: string
+  year: number
+  vehicle_type: string
+}
+
+interface Booking {
+  id: string
+  parking_lot: {
+    id: string
+    name: string
+    location: string
+  }
+  vehicle: {
+    id: string
+    registration_number: string
+  }
+  start_time: string
+  end_time: string
+  status: string
+  total_amount: number
+  spot_number?: string
+}
+
 export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
   console.log('ParkingDashboard component rendered with theme:', theme); // Debug log
 
   const [selectedLocation, setSelectedLocation] = useState("delhi")
-  const [selectedLot, _setSelectedLot] = useState<string | null>(null)
+  const [selectedLot, setSelectedLot] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([])
+  const [userBookings, setUserBookings] = useState<Booking[]>([])
+  const [userVehicles, setUserVehicles] = useState<Vehicle[]>([])
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
+  const [isBookingLoading, setIsBookingLoading] = useState(false)
+  const [selectedVehicle, setSelectedVehicle] = useState<string>("")
+  const [filters, setFilters] = useState({
+    priceRange: { min: 0, max: 50 },
+    distance: 5,
+    features: [] as string[]
+  })
   const [bookingData, setBookingData] = useState({
     vehicleNumber: "",
     startTime: "",
@@ -57,71 +114,209 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
     { value: "ahmedabad", label: "Ahmedabad" },
   ]
 
-  const parkingLots = [
-    {
-      id: "1",
-      name: "City Center Mall",
-      location: "Connaught Place, New Delhi",
-      capacity: 200,
-      available: 45,
-      price: "₹20/hour",
-      distance: "0.5 km",
-      rating: 4.5,
-      features: ["CCTV", "24/7 Security", "EV Charging"],
-      image: "/placeholder.svg?height=200&width=300&text=City+Center+Mall",
-    },
-    {
-      id: "2",
-      name: "Metro Station Hub",
-      location: "Rajiv Chowk Metro, New Delhi",
-      capacity: 150,
-      available: 12,
-      price: "₹15/hour",
-      distance: "1.2 km",
-      rating: 4.2,
-      features: ["Metro Access", "Covered Parking"],
-      image: "/placeholder.svg?height=200&width=300&text=Metro+Station+Hub",
-    },
-    {
-      id: "3",
-      name: "Business District",
-      location: "Cyber City, Gurgaon",
-      capacity: 300,
-      available: 89,
-      price: "₹25/hour",
-      distance: "2.1 km",
-      rating: 4.7,
-      features: ["Premium Location", "Valet Service", "Car Wash"],
-      image: "/placeholder.svg?height=200&width=300&text=Business+District",
-    },
-  ]
+  // Fetch parking lots from API
+  const fetchParkingLots = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
 
-  const myBookings = [
-    {
-      id: "1",
-      lotName: "City Center Mall",
-      spotNumber: "A-15",
-      vehicleNumber: "DL-01-AB-1234",
-      startTime: "2024-01-15 10:00",
-      endTime: "2024-01-15 14:00",
-      status: "active",
-      amount: "₹80",
-    },
-    {
-      id: "2",
-      lotName: "Metro Station Hub",
-      spotNumber: "B-08",
-      vehicleNumber: "DL-01-CD-5678",
-      startTime: "2024-01-14 09:00",
-      endTime: "2024-01-14 18:00",
-      status: "completed",
-      amount: "₹135",
-    },
-  ]
+      const response = await api.getParkingLots({
+        search: searchQuery || undefined,
+        min_price: filters.priceRange.min,
+        max_price: filters.priceRange.max,
+        features: filters.features.length > 0 ? filters.features : undefined,
+        limit: 20
+      })
 
-  const handleBooking = () => {
-    console.log("Booking:", { selectedLot, ...bookingData })
-  }
+      if (response.success && response.data) {
+        const data = response.data as any
+        if (data.data && data.data.lots) {
+          setParkingLots(data.data.lots)
+        } else if (data.lots) {
+          setParkingLots(data.lots)
+        } else {
+          setError('Invalid response format')
+        }
+      } else {
+        setError('Failed to fetch parking lots')
+      }
+    } catch (error) {
+      console.error('Error fetching parking lots:', error)
+      setError('Failed to fetch parking lots')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [searchQuery, filters])
+
+  // Fetch user bookings from API
+  const fetchUserBookings = useCallback(async () => {
+    try {
+      const response = await api.getUserBookings({
+        limit: 10
+      })
+
+      if (response.success && response.data) {
+        const data = response.data as any
+        if (data.data && data.data.bookings) {
+          setUserBookings(data.data.bookings)
+        } else if (data.bookings) {
+          setUserBookings(data.bookings)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user bookings:', error)
+    }
+  }, [])
+
+  // Fetch user vehicles from API
+  const fetchUserVehicles = useCallback(async () => {
+    try {
+      const response = await api.getVehicles()
+
+      if (response.success && response.data) {
+        const data = response.data as any
+        if (data.data && data.data.vehicles) {
+          setUserVehicles(data.data.vehicles)
+        } else if (data.vehicles) {
+          setUserVehicles(data.vehicles)
+        } else if (Array.isArray(data)) {
+          setUserVehicles(data)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user vehicles:', error)
+    }
+  }, [])
+
+  // Handle booking creation
+  const handleBooking = useCallback(async () => {
+    console.log('handleBooking called with:', {
+      selectedLot,
+      selectedVehicle,
+      startTime: bookingData.startTime,
+      endTime: bookingData.endTime
+    })
+
+    if (!selectedLot) {
+      console.log('No lot selected')
+      alert('Please select a parking lot')
+      return
+    }
+
+    if (!selectedVehicle || selectedVehicle === 'no-vehicles') {
+      console.log('No vehicle selected or no vehicles available')
+      alert('Please select a vehicle. Add a vehicle first if you don\'t have any.')
+      return
+    }
+
+    if (!bookingData.startTime || !bookingData.endTime) {
+      console.log('Missing time data')
+      alert('Please select start and end times')
+      return
+    }
+
+    const startTime = new Date(bookingData.startTime)
+    const endTime = new Date(bookingData.endTime)
+
+    if (startTime >= endTime) {
+      console.log('Invalid time range')
+      alert('End time must be after start time')
+      return
+    }
+
+    if (startTime < new Date()) {
+      console.log('Start time in past')
+      alert('Start time cannot be in the past')
+      return
+    }
+
+    try {
+      setIsBookingLoading(true)
+      console.log('Sending booking request...')
+
+      const bookingPayload = {
+        parking_lot_id: selectedLot,
+        vehicle_id: selectedVehicle,
+        start_time: bookingData.startTime,
+        end_time: bookingData.endTime,
+      }
+
+      console.log('Booking payload:', bookingPayload)
+
+      const response = await api.createBooking(bookingPayload)
+      console.log('Booking response:', response)
+
+      if (response.success) {
+        alert('Booking created successfully!')
+        setIsBookingDialogOpen(false)
+        setSelectedLot(null)
+        setSelectedVehicle("")
+        setBookingData({
+          vehicleNumber: "",
+          startTime: "",
+          endTime: "",
+        })
+        // Refresh bookings and parking lots
+        fetchUserBookings()
+        fetchParkingLots()
+      } else {
+        const errorMsg = (response as any)?.message || 'Failed to create booking. Please try again.'
+        console.log('Booking failed:', errorMsg)
+        alert(errorMsg)
+      }
+    } catch (error: any) {
+      console.error('Error creating booking:', error)
+      const errorMsg = error?.message || error?.error || 'Error creating booking. Please try again.'
+      alert(errorMsg)
+    } finally {
+      setIsBookingLoading(false)
+    }
+  }, [selectedLot, selectedVehicle, bookingData, fetchUserBookings, fetchParkingLots])  // Handle opening booking dialog for specific lot
+  const handleBookSpot = useCallback((lotId: string) => {
+    console.log('Book Spot clicked for lot:', lotId)
+    setSelectedLot(lotId)
+    setIsBookingDialogOpen(true)
+    console.log('Dialog should now be open:', true)
+  }, [])
+
+  const handleQuickBooking = useCallback(() => {
+    console.log("Quick Booking:", { selectedLot, ...bookingData })
+    // Add actual booking logic here
+  }, [selectedLot, bookingData])
+
+  const handleLocationChange = useCallback((value: string) => {
+    setSelectedLocation(value)
+  }, [])
+
+  // Real-time updates polling
+  useEffect(() => {
+    // Initial fetch
+    fetchParkingLots()
+    fetchUserBookings()
+    fetchUserVehicles()
+
+    const pollInterval = setInterval(() => {
+      fetchParkingLots()
+    }, 30000) // Update every 30 seconds
+
+    return () => clearInterval(pollInterval)
+  }, [fetchParkingLots, fetchUserBookings, fetchUserVehicles])  // Fetch data when search or filters change
+  useEffect(() => {
+    fetchParkingLots()
+  }, [searchQuery, filters.priceRange, filters.features])
+
+  const fetchParkingLotUpdates = async () => {
+    await fetchParkingLots()
+  }  // Filter parking lots based on search and filters
+  const filteredParkingLots = useMemo(() => {
+    return parkingLots.filter(lot => {
+      const matchesSearch = lot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lot.location.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesPrice = lot.price_per_hour >= filters.priceRange.min &&
+        lot.price_per_hour <= filters.priceRange.max
+      return matchesSearch && matchesPrice
+    })
+  }, [parkingLots, searchQuery, filters])
 
   const getAvailabilityColor = (available: number, capacity: number) => {
     const percentage = (available / capacity) * 100
@@ -158,6 +353,29 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
       : "from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
   }
 
+  // Loading component
+  const LoadingSpinner = () => (
+    <div className="flex justify-center items-center py-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  )
+
+  // Error component
+  const ErrorMessage = ({ message }: { message: string }) => (
+    <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-red-900/20 text-red-400" : "bg-red-50 text-red-600"}`}>
+      <p>{message}</p>
+    </div>
+  )
+
+  // Empty state component
+  const EmptyState = ({ title, description }: { title: string; description: string }) => (
+    <div className="text-center py-12">
+      <Car className={`mx-auto h-12 w-12 ${getMutedTextColor()}`} />
+      <h3 className={`mt-4 text-lg font-medium ${getTextColor()}`}>{title}</h3>
+      <p className={`mt-2 ${getMutedTextColor()}`}>{description}</p>
+    </div>
+  )
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header Section */}
@@ -175,7 +393,7 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
         </div>
 
         <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:gap-3">
-          <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+          <Select value={selectedLocation} onValueChange={handleLocationChange}>
             <SelectTrigger
               className={`w-full sm:w-48 h-12 sm:h-10 transition-all duration-300 ${theme === "dark"
                 ? "bg-slate-700 border-slate-600 text-slate-100"
@@ -202,7 +420,10 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button className={`w-full sm:w-auto bg-gradient-to-r transition-all duration-300 ${getGradientPrimary()}`}>
+              <Button
+                className={`w-full sm:w-auto bg-gradient-to-r transition-all duration-300 ${getGradientPrimary()}`}
+                aria-label="Quick book parking spot"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Quick Book
               </Button>
@@ -267,10 +488,123 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                     />
                   </div>
                 </div>
-                <Button onClick={handleBooking} className="w-full h-12 sm:h-10">
+                <Button onClick={handleQuickBooking} className="w-full h-12 sm:h-10">
                   <Zap className="mr-2 h-4 w-4" />
                   Book Now
                 </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Booking Dialog */}
+          <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+            <DialogContent
+              className={`mx-2 sm:mx-0 w-[calc(100vw-1rem)] sm:max-w-md transition-all duration-300 ${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
+                }`}
+            >
+              <DialogHeader>
+                <DialogTitle className={`transition-colors duration-300 ${getTextColor()}`}>
+                  Book Parking Spot
+                </DialogTitle>
+                <DialogDescription className={`transition-colors duration-300 ${getMutedTextColor()}`}>
+                  Select your vehicle and time slot to book this parking spot
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vehicle-select" className={`transition-colors duration-300 ${getTextColor()}`}>
+                    Select Vehicle
+                  </Label>
+                  <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
+                    <SelectTrigger
+                      className={`h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
+                        ? "bg-slate-700 border-slate-600 text-slate-100"
+                        : "bg-white border-slate-300 text-slate-900"
+                        }`}
+                    >
+                      <SelectValue placeholder="Choose your vehicle" />
+                    </SelectTrigger>
+                    <SelectContent className={theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}>
+                      {userVehicles.length === 0 ? (
+                        <SelectItem value="no-vehicles" disabled className="text-slate-400">
+                          No vehicles found. Please add a vehicle first.
+                        </SelectItem>
+                      ) : (
+                        userVehicles.map((vehicle) => (
+                          <SelectItem
+                            key={vehicle.id}
+                            value={vehicle.id}
+                            className={
+                              theme === "dark" ? "text-slate-100 focus:bg-slate-700" : "text-slate-900 focus:bg-slate-100"
+                            }
+                          >
+                            {vehicle.registration_number} - {vehicle.make} {vehicle.model}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-start" className={`transition-colors duration-300 ${getTextColor()}`}>
+                      Start Time
+                    </Label>
+                    <Input
+                      id="booking-start"
+                      type="datetime-local"
+                      className={`h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
+                        ? "bg-slate-700 border-slate-600 text-slate-100"
+                        : "bg-white border-slate-300 text-slate-900"
+                        }`}
+                      value={bookingData.startTime}
+                      onChange={(e) => setBookingData((prev) => ({ ...prev, startTime: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-end" className={`transition-colors duration-300 ${getTextColor()}`}>
+                      End Time
+                    </Label>
+                    <Input
+                      id="booking-end"
+                      type="datetime-local"
+                      className={`h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
+                        ? "bg-slate-700 border-slate-600 text-slate-100"
+                        : "bg-white border-slate-300 text-slate-900"
+                        }`}
+                      value={bookingData.endTime}
+                      onChange={(e) => setBookingData((prev) => ({ ...prev, endTime: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsBookingDialogOpen(false)}
+                    className="flex-1 h-12 sm:h-10"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleBooking}
+                    disabled={isBookingLoading}
+                    className="flex-1 h-12 sm:h-10"
+                  >
+                    {isBookingLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Booking...
+                      </>
+                    ) : (
+                      <>
+                        <Car className="mr-2 h-4 w-4" />
+                        Confirm Booking
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
@@ -318,6 +652,10 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                   />
                   <Input
                     placeholder="Search parking lots..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Search parking lots"
+                    role="searchbox"
                     className={`pl-10 h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
                       ? "bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
                       : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
@@ -339,117 +677,131 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
           </Card>
 
           {/* Parking Lots Grid */}
-          <div className="grid gap-4 sm:gap-6">
-            {parkingLots.map((lot) => (
-              <Card
-                key={lot.id}
-                className={`overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-md ${getCardBackground()}`}
-              >
-                <div className="sm:flex">
-                  <div className="sm:w-1/3">
-                    <img
-                      src={lot.image || "/placeholder.svg"}
-                      alt={lot.name}
-                      className="w-full h-48 sm:h-full object-cover"
-                    />
-                  </div>
-                  <div className="sm:w-2/3 p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3 sm:gap-0">
-                      <div className="flex-1">
-                        <h3 className={`font-bold text-lg sm:text-xl mb-1 transition-colors duration-300 ${getTextColor()}`}>
-                          {lot.name}
-                        </h3>
-                        <div
-                          className={`flex items-center mb-2 text-sm transition-colors duration-300 ${getMutedTextColor()}`}
-                        >
-                          <MapPin className="mr-1 h-3 w-3 flex-shrink-0" />
-                          <span className="line-clamp-1">{lot.location}</span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                            <span className={`font-medium transition-colors duration-300 ${getTextColor()}`}>
-                              {lot.rating}
+          {isLoading ? (
+            <LoadingSpinner />
+          ) : error ? (
+            <ErrorMessage message={error} />
+          ) : filteredParkingLots.length === 0 ? (
+            <EmptyState
+              title="No parking spots found"
+              description="Try adjusting your search criteria or location"
+            />
+          ) : (
+            <div className="grid gap-4 sm:gap-6">
+              {filteredParkingLots.map((lot) => (
+                <Card
+                  key={lot.id}
+                  className={`overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-md ${getCardBackground()}`}
+                >
+                  <div className="flex flex-col sm:flex-row">
+                    <div className="sm:w-1/3">
+                      <img
+                        src={lot.image || "/placeholder.svg"}
+                        alt={lot.name}
+                        className="w-full h-48 sm:h-full object-cover"
+                      />
+                    </div>
+                    <div className="sm:w-2/3 p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3 sm:gap-0">
+                        <div className="flex-1">
+                          <h3 className={`font-bold text-lg sm:text-xl mb-1 transition-colors duration-300 ${getTextColor()}`}>
+                            {lot.name}
+                          </h3>
+                          <div
+                            className={`flex items-center mb-2 text-sm transition-colors duration-300 ${getMutedTextColor()}`}
+                          >
+                            <MapPin className="mr-1 h-3 w-3 flex-shrink-0" />
+                            <span className="line-clamp-1">{lot.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center">
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                              <span className={`font-medium transition-colors duration-300 ${getTextColor()}`}>
+                                {lot.rating}
+                              </span>
+                            </div>
+                            <span className={`transition-colors duration-300 ${getMutedTextColor()}`}>•</span>
+                            <span className={`text-sm transition-colors duration-300 ${getMutedTextColor()}`}>
+                              {lot.distance} away
                             </span>
                           </div>
-                          <span className={`transition-colors duration-300 ${getMutedTextColor()}`}>•</span>
-                          <span className={`text-sm transition-colors duration-300 ${getMutedTextColor()}`}>
-                            {lot.distance} away
-                          </span>
+                        </div>
+                        <Badge
+                          className={`px-3 py-1 font-medium border transition-all duration-300 self-start ${getAvailabilityColor(lot.current_available_spots, lot.total_capacity)}`}
+                          variant="secondary"
+                        >
+                          {lot.current_available_spots} spots
+                        </Badge>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                        {lot.features.map((feature, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className={`text-xs transition-all duration-300 ${theme === "dark" ? "border-slate-600 text-slate-300" : "border-slate-300 text-slate-600"
+                              }`}
+                          >
+                            <Shield className="mr-1 h-3 w-3" />
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-xs sm:text-sm">
+                        <div>
+                          <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Capacity</span>
+                          <p className={`font-semibold transition-colors duration-300 ${getTextColor()}`}>
+                            {lot.total_capacity} spots
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Price</span>
+                          <p
+                            className={`font-semibold transition-colors duration-300 ${theme === "dark" ? "text-green-400" : "text-green-600"
+                              }`}
+                          >
+                            ₹{lot.price_per_hour}/hour
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Distance</span>
+                          <p className={`font-semibold transition-colors duration-300 ${getTextColor()}`}>
+                            {lot.distance}
+                          </p>
                         </div>
                       </div>
-                      <Badge
-                        className={`px-3 py-1 font-medium border transition-all duration-300 self-start ${getAvailabilityColor(lot.available, lot.capacity)}`}
-                        variant="secondary"
-                      >
-                        {lot.available} spots
-                      </Badge>
-                    </div>
 
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                      {lot.features.map((feature, index) => (
-                        <Badge
-                          key={index}
+                      <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                        <Button
+                          className={`w-full sm:flex-1 h-12 sm:h-10 bg-gradient-to-r transition-all duration-300 ${getGradientPrimary()}`}
+                          onClick={() => handleBookSpot(lot.id)}
+                        >
+                          <Car className="mr-2 h-4 w-4" />
+                          Book Spot
+                        </Button>
+                        <Button
                           variant="outline"
-                          className={`text-xs transition-all duration-300 ${theme === "dark" ? "border-slate-600 text-slate-300" : "border-slate-300 text-slate-600"
+                          className={`w-full sm:flex-1 h-12 sm:h-10 transition-all duration-300 ${theme === "dark"
+                            ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
+                            : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                             }`}
                         >
-                          <Shield className="mr-1 h-3 w-3" />
-                          {feature}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-xs sm:text-sm">
-                      <div>
-                        <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Capacity</span>
-                        <p className={`font-semibold transition-colors duration-300 ${getTextColor()}`}>
-                          {lot.capacity} spots
-                        </p>
+                          <Navigation className="mr-2 h-4 w-4" />
+                          Directions
+                        </Button>
                       </div>
-                      <div>
-                        <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Price</span>
-                        <p
-                          className={`font-semibold transition-colors duration-300 ${theme === "dark" ? "text-green-400" : "text-green-600"
-                            }`}
-                        >
-                          {lot.price}
-                        </p>
-                      </div>
-                      <div>
-                        <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Distance</span>
-                        <p className={`font-semibold transition-colors duration-300 ${getTextColor()}`}>
-                          {lot.distance}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                      <Button className={`flex-1 h-11 sm:h-10 bg-gradient-to-r transition-all duration-300 ${getGradientPrimary()}`}>
-                        <Car className="mr-2 h-4 w-4" />
-                        Book Spot
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className={`flex-1 h-11 sm:h-10 transition-all duration-300 ${theme === "dark"
-                          ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
-                          : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-                          }`}
-                      >
-                        <Navigation className="mr-2 h-4 w-4" />
-                        Directions
-                      </Button>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="bookings" className="space-y-4">
           <div className="grid gap-4">
-            {myBookings.map((booking) => (
+            {userBookings.map((booking) => (
               <Card
                 key={booking.id}
                 className={`border-0 shadow-md transition-all duration-300 ${getCardBackground()}`}
@@ -458,10 +810,10 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className={`font-bold text-lg transition-colors duration-300 ${getTextColor()}`}>
-                        {booking.lotName}
+                        {booking.parking_lot.name}
                       </h3>
                       <p className={`transition-colors duration-300 ${getMutedTextColor()}`}>
-                        Spot: {booking.spotNumber}
+                        Spot: {booking.spot_number || 'TBD'}
                       </p>
                     </div>
                     <Badge
@@ -493,15 +845,15 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                     <div>
                       <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Vehicle</span>
                       <p className={`font-semibold transition-colors duration-300 ${getTextColor()}`}>
-                        {booking.vehicleNumber}
+                        {booking.vehicle.registration_number}
                       </p>
                     </div>
                     <div>
                       <span className={`block transition-colors duration-300 ${getMutedTextColor()}`}>Duration</span>
                       <p className={`font-semibold transition-colors duration-300 ${getTextColor()}`}>
-                        {new Date(booking.startTime).toLocaleDateString()} •{" "}
-                        {new Date(booking.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
-                        {new Date(booking.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(booking.start_time).toLocaleDateString()} •{" "}
+                        {new Date(booking.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+                        {new Date(booking.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
                     <div>
@@ -510,16 +862,16 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                         className={`font-semibold transition-colors duration-300 ${theme === "dark" ? "text-green-400" : "text-green-600"
                           }`}
                       >
-                        {booking.amount}
+                        ₹{booking.total_amount}
                       </p>
                     </div>
                   </div>
 
                   {booking.status === "active" && (
-                    <div className="flex gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                       <Button
                         variant="outline"
-                        className={`flex-1 transition-all duration-300 ${theme === "dark"
+                        className={`w-full sm:flex-1 h-12 sm:h-10 transition-all duration-300 ${theme === "dark"
                           ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
                           : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                           }`}
@@ -529,7 +881,7 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                       </Button>
                       <Button
                         variant="destructive"
-                        className={`flex-1 transition-all duration-300 ${theme === "dark" ? "bg-red-600 hover:bg-red-700" : "bg-red-600 hover:bg-red-700"
+                        className={`w-full sm:flex-1 h-12 sm:h-10 transition-all duration-300 ${theme === "dark" ? "bg-red-600 hover:bg-red-700" : "bg-red-600 hover:bg-red-700"
                           }`}
                       >
                         End Booking

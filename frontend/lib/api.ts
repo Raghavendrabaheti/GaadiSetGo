@@ -30,16 +30,18 @@ export const API_ENDPOINTS = {
     // Parking
     PARKING: {
         BASE: '/api/v1/parking',
-        BOOK: '/api/v1/parking/book',
-        SLOTS: '/api/v1/parking/slots',
-        HISTORY: '/api/v1/parking/history',
+        LOTS: '/api/v1/parking/lots',
+        LOTS_NEARBY: '/api/v1/parking/lots/nearby',
+        BOOKINGS: '/api/v1/parking/bookings',
+        BOOK: '/api/v1/parking/bookings',
+        HISTORY: '/api/v1/parking/bookings',
     },
 
     // Vehicles
     VEHICLES: {
-        BASE: '/api/v1/vehicles',
-        ADD: '/api/v1/vehicles/add',
-        LIST: '/api/v1/vehicles',
+        BASE: '/api/v1/vehicles/',
+        ADD: '/api/v1/vehicles',
+        LIST: '/api/v1/vehicles/',
         DELETE: '/api/v1/vehicles',
     },
 
@@ -389,15 +391,79 @@ export const api = {
     getProfile: () => apiClient.get(API_ENDPOINTS.USERS.PROFILE),
 
     // Parking
-    getParkingSlots: () => apiClient.get(API_ENDPOINTS.PARKING.SLOTS),
+    getParkingLots: (params?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        min_price?: number;
+        max_price?: number;
+        features?: string[];
+    }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.append('page', params.page.toString());
+        if (params?.limit) searchParams.append('limit', params.limit.toString());
+        if (params?.search) searchParams.append('search', params.search);
+        if (params?.min_price) searchParams.append('min_price', params.min_price.toString());
+        if (params?.max_price) searchParams.append('max_price', params.max_price.toString());
+        if (params?.features) params.features.forEach(f => searchParams.append('features', f));
 
-    bookParkingSlot: (bookingData: {
-        slot_id: string;
+        const queryString = searchParams.toString();
+        const url = queryString ? `${API_ENDPOINTS.PARKING.LOTS}?${queryString}` : API_ENDPOINTS.PARKING.LOTS;
+        return apiClient.get(url);
+    },
+
+    getNearbyParkingLots: (params: {
+        latitude: number;
+        longitude: number;
+        radius?: number;
+        limit?: number;
+    }) => {
+        const searchParams = new URLSearchParams({
+            latitude: params.latitude.toString(),
+            longitude: params.longitude.toString(),
+        });
+        if (params.radius) searchParams.append('radius', params.radius.toString());
+        if (params.limit) searchParams.append('limit', params.limit.toString());
+
+        return apiClient.get(`${API_ENDPOINTS.PARKING.LOTS_NEARBY}?${searchParams.toString()}`);
+    },
+
+    getParkingLotDetails: (lotId: string) =>
+        apiClient.get(`${API_ENDPOINTS.PARKING.LOTS}/${lotId}`),
+
+    createBooking: (bookingData: {
+        parking_lot_id: string;
         vehicle_id: string;
-        duration: number;
-    }) => apiClient.post(API_ENDPOINTS.PARKING.BOOK, bookingData),
+        start_time: string;
+        end_time: string;
+    }) => apiClient.post(API_ENDPOINTS.PARKING.BOOKINGS, bookingData),
 
-    getParkingHistory: () => apiClient.get(API_ENDPOINTS.PARKING.HISTORY),
+    getUserBookings: (params?: {
+        page?: number;
+        limit?: number;
+        status?: string;
+    }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.append('page', params.page.toString());
+        if (params?.limit) searchParams.append('limit', params.limit.toString());
+        if (params?.status) searchParams.append('status', params.status);
+
+        const queryString = searchParams.toString();
+        const url = queryString ? `${API_ENDPOINTS.PARKING.BOOKINGS}?${queryString}` : API_ENDPOINTS.PARKING.BOOKINGS;
+        return apiClient.get(url);
+    },
+
+    getBookingDetails: (bookingId: string) =>
+        apiClient.get(`${API_ENDPOINTS.PARKING.BOOKINGS}/${bookingId}`),
+
+    cancelBooking: (bookingId: string) =>
+        apiClient.patch(`${API_ENDPOINTS.PARKING.BOOKINGS}/${bookingId}/cancel`),
+
+    checkinBooking: (bookingId: string) =>
+        apiClient.patch(`${API_ENDPOINTS.PARKING.BOOKINGS}/${bookingId}/checkin`),
+
+    checkoutBooking: (bookingId: string) =>
+        apiClient.patch(`${API_ENDPOINTS.PARKING.BOOKINGS}/${bookingId}/checkout`),
 
     // Vehicles
     getVehicles: () => apiClient.get(API_ENDPOINTS.VEHICLES.LIST),

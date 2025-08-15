@@ -13,11 +13,11 @@ from contextlib import asynccontextmanager
 # Import all route modules
 from app.routes import (
     auth_routes,
-    # parking_routes,  # Empty file
-    # vehicle_routes,  # Empty file
-    # service_routes,  # Empty file
-    # ecommerce_routes,  # Empty file
-    # ai_assistant_routes,  # Empty file
+    parking_routes,  # Now available
+    vehicle_routes,  # Now available
+    service_routes,  # Now available
+    ecommerce_routes,  # Now available
+    ai_assistant_routes,  # Now available
     user_routes,  # Now has profile endpoint
     fastag_routes,
     challan_routes,
@@ -137,16 +137,16 @@ app.include_router(auth_routes.router, prefix="/api/v1/auth",
                    tags=["🔐 Authentication"])
 app.include_router(user_routes.router, prefix="/api/v1/users",
                    tags=["👤 User Management"])
-# app.include_router(parking_routes.router,
-#                    prefix="/api/v1/parking", tags=["🅿️ Parking Management"])  # Empty file
-# app.include_router(vehicle_routes.router,
-#                    prefix="/api/v1/vehicles", tags=["🚗 Vehicle Management"])  # Empty file
-# app.include_router(service_routes.router,
-#                    prefix="/api/v1/services", tags=["🔧 Vehicle Services"])  # Empty file
-# app.include_router(ecommerce_routes.router,
-#                    prefix="/api/v1/ecommerce", tags=["🛒 E-commerce"])  # Empty file
-# app.include_router(ai_assistant_routes.router,
-#                    prefix="/api/v1/ai", tags=["🤖 AI Assistant"])  # Empty file
+app.include_router(parking_routes.router,
+                   prefix="/api/v1/parking", tags=["🅿️ Parking Management"])
+app.include_router(vehicle_routes.router,
+                   prefix="/api/v1/vehicles", tags=["🚗 Vehicle Management"])
+app.include_router(service_routes.router,
+                   prefix="/api/v1/services", tags=["🔧 Vehicle Services"])
+app.include_router(ecommerce_routes.router,
+                   prefix="/api/v1/ecommerce", tags=["🛒 E-commerce"])
+app.include_router(ai_assistant_routes.router,
+                   prefix="/api/v1/ai", tags=["🤖 AI Assistant"])
 app.include_router(fastag_routes.router,
                    prefix="/api/v1/fastag", tags=["💳 FASTag Services"])
 app.include_router(challan_routes.router,
