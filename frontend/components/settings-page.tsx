@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -24,7 +23,7 @@ interface SettingsPageProps {
     theme: string
 }
 
-export default function SettingsPage({ theme }: SettingsPageProps) {
+export default function SettingsPage({ theme: _theme }: SettingsPageProps) {
     const themeColors = {
         primary: "from-blue-600 to-purple-600",
         secondary: "from-green-500 to-blue-500",

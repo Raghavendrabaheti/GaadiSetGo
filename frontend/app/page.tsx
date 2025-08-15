@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Car, Menu, X } from "lucide-react"
 import HomePage from "@/components/home-page"
@@ -13,12 +13,39 @@ import AccountPage from "@/components/account-page"
 import SettingsPage from "@/components/settings-page"
 import Navigation from "@/components/navigation"
 import LoadingScreen from "@/components/loading-screen"
+import ConnectionTest from "@/components/connection-test"
+import { useAuth } from "@/lib/auth-context"
 
 export default function VehicleParkingApp() {
+  const { isAuthenticated, logout, isLoading: authLoading } = useAuth()
   const [currentScreen, setCurrentScreen] = useState("home")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Watch for authentication state changes and redirect accordingly
+  useEffect(() => {
+    console.log('Auth state changed:', { isAuthenticated, authLoading, currentScreen }); // Debug log
+
+    // If user becomes authenticated while on auth screen, redirect to dashboard
+    // Only do this if we're still on the auth screen (manual redirect in handleLogin should handle it first)
+    if (isAuthenticated && !authLoading && currentScreen === "auth") {
+      console.log('User authenticated via useEffect, redirecting to dashboard'); // Debug log
+      setCurrentScreen("dashboard")
+    }
+
+    // If user is not authenticated but trying to access protected screen, redirect to auth
+    if (!isAuthenticated && !authLoading && !["home", "auth"].includes(currentScreen)) {
+      console.log('User not authenticated, redirecting to auth'); // Debug log
+      setCurrentScreen("auth")
+    }
+  }, [isAuthenticated, authLoading, currentScreen])
+
+  // Redirect to home when user logs out
+  useEffect(() => {
+    if (!isAuthenticated && !authLoading && !["home", "auth"].includes(currentScreen)) {
+      setCurrentScreen("home")
+    }
+  }, [isAuthenticated, authLoading, currentScreen])
 
   // Fixed theme colors - using light theme only
   const themeColors = {
@@ -27,18 +54,16 @@ export default function VehicleParkingApp() {
   }
 
   const handleLogin = () => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setIsAuthenticated(true)
-      setCurrentScreen("home")
-      setIsLoading(false)
-    }, 2000)
+    console.log('handleLogin called - redirecting to dashboard'); // Debug log
+    // Redirect to dashboard immediately after successful login
+    setCurrentScreen("dashboard")
+    console.log('Screen set to dashboard'); // Debug log
   }
 
   const handleLogout = () => {
     setIsLoading(true)
+    logout()
     setTimeout(() => {
-      setIsAuthenticated(false)
       setCurrentScreen("home")
       setIsLoading(false)
     }, 1000)
@@ -69,7 +94,7 @@ export default function VehicleParkingApp() {
     }, 300)
   }
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return <LoadingScreen theme="light" />
   }
 
@@ -165,14 +190,29 @@ export default function VehicleParkingApp() {
         <main className="flex-1 transition-all duration-300 w-full max-w-full overflow-x-hidden">
           <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-6 pb-20 sm:pb-6 max-w-full box-border">
             {currentScreen === "home" && !isAuthenticated && <HomePage onGetStarted={handleGetStarted} />}
-            {currentScreen === "home" && isAuthenticated && <HomePage onGetStarted={handleGetStarted} />}
+            {currentScreen === "home" && isAuthenticated && (
+              <div className="space-y-6">
+                <ConnectionTest className="max-w-md mx-auto" />
+                <HomePage onGetStarted={handleGetStarted} />
+              </div>
+            )}
             {currentScreen === "auth" && <AuthScreens onLogin={handleLogin} onBack={handleBackToHome} theme="light" />}
-            {currentScreen === "dashboard" && isAuthenticated && <ParkingDashboard theme="light" />}
+            {currentScreen === "dashboard" && (
+              <div>
+                <p>Debug: isAuthenticated = {isAuthenticated.toString()}, currentScreen = {currentScreen}</p>
+                {isAuthenticated ? <ParkingDashboard theme="light" /> : <div>Not authenticated - redirecting...</div>}
+              </div>
+            )}
             {currentScreen === "services" && isAuthenticated && <VehicleServices theme="light" />}
             {currentScreen === "ecommerce" && isAuthenticated && <ECommerceSection theme="light" />}
             {currentScreen === "ai" && isAuthenticated && <AIAssistant theme="light" />}
             {currentScreen === "account" && isAuthenticated && <AccountPage theme="light" />}
             {currentScreen === "settings" && isAuthenticated && <SettingsPage theme="light" />}
+
+            {/* Fallback: If trying to access protected content without auth, redirect to auth */}
+            {!isAuthenticated && !["home", "auth"].includes(currentScreen) && (
+              <AuthScreens onLogin={handleLogin} onBack={handleBackToHome} theme="light" />
+            )}
           </div>
         </main>
       </div>

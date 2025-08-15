@@ -19,7 +19,7 @@ export default function Navigation({
   currentScreen,
   onScreenChange,
   isMobile,
-  isOpen,
+  isOpen: _isOpen,
   isBottom,
   isHorizontal,
   theme,
@@ -107,19 +107,17 @@ export default function Navigation({
             <button
               key={screen.id}
               onClick={() => onScreenChange(screen.id)}
-              className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 transition-all duration-200 rounded-lg mx-0.5 sm:mx-1 py-1 sm:py-2 ${
-                isActive 
-                  ? `${screen.color} scale-105 sm:scale-110 bg-slate-100 dark:bg-slate-800` 
+              className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 transition-all duration-200 rounded-lg mx-0.5 sm:mx-1 py-1 sm:py-2 ${isActive
+                  ? `${screen.color} scale-105 sm:scale-110 bg-slate-100 dark:bg-slate-800`
                   : getTextColor(false)
-              }`}
+                }`}
             >
               <div className="relative">
                 <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 {screen.badge && (
                   <Badge
-                    className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-3 w-3 sm:h-4 sm:w-4 p-0 text-[10px] sm:text-xs flex items-center justify-center ${
-                      theme === "dark" ? "bg-red-500 text-white" : "bg-red-500 text-white"
-                    }`}
+                    className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-3 w-3 sm:h-4 sm:w-4 p-0 text-[10px] sm:text-xs flex items-center justify-center ${theme === "dark" ? "bg-red-500 text-white" : "bg-red-500 text-white"
+                      }`}
                   >
                     {screen.badge}
                   </Badge>
@@ -132,11 +130,10 @@ export default function Navigation({
         {/* Account button in bottom navigation */}
         <button
           onClick={() => onScreenChange("account")}
-          className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 transition-all duration-200 rounded-lg mx-0.5 sm:mx-1 py-1 sm:py-2 ${
-            currentScreen === "account" 
-              ? "text-indigo-600 scale-105 sm:scale-110 bg-slate-100 dark:bg-slate-800" 
+          className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 transition-all duration-200 rounded-lg mx-0.5 sm:mx-1 py-1 sm:py-2 ${currentScreen === "account"
+              ? "text-indigo-600 scale-105 sm:scale-110 bg-slate-100 dark:bg-slate-800"
               : getTextColor(false)
-          }`}
+            }`}
         >
           <User className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="text-[10px] sm:text-xs font-medium leading-tight">Account</span>
@@ -161,11 +158,10 @@ export default function Navigation({
                   key={screen.id}
                   variant="ghost"
                   size="sm"
-                  className={`transition-all duration-200 ${
-                    isActive
+                  className={`transition-all duration-200 ${isActive
                       ? "bg-white/20 text-slate-900 shadow-sm"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => onScreenChange(screen.id)}
                 >
                   <Icon className="h-4 w-4 mr-2" />
@@ -190,11 +186,10 @@ export default function Navigation({
                   key={screen.id}
                   variant="ghost"
                   size="sm"
-                  className={`transition-all duration-200 px-2 ${
-                    isActive
+                  className={`transition-all duration-200 px-2 ${isActive
                       ? "bg-white/20 text-slate-900 shadow-sm"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => onScreenChange(screen.id)}
                 >
                   <Icon className="h-4 w-4" />
@@ -218,11 +213,10 @@ export default function Navigation({
                   key={screen.id}
                   variant="ghost"
                   size="sm"
-                  className={`transition-all duration-200 px-2 relative ${
-                    isActive
+                  className={`transition-all duration-200 px-2 relative ${isActive
                       ? "bg-white/20 text-slate-900"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => onScreenChange(screen.id)}
                 >
                   <Icon className="h-4 w-4" />
@@ -249,11 +243,10 @@ export default function Navigation({
                   key={item.id}
                   variant="ghost"
                   size="sm"
-                  className={`transition-all duration-200 ${
-                    isActive
+                  className={`transition-all duration-200 ${isActive
                       ? "bg-white/20 text-slate-900 shadow-sm"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => onScreenChange(item.id)}
                 >
                   <Icon className="h-4 w-4 mr-2" />
@@ -282,11 +275,10 @@ export default function Navigation({
                   key={item.id}
                   variant="ghost"
                   size="sm"
-                  className={`transition-all duration-200 px-2 ${
-                    isActive
+                  className={`transition-all duration-200 px-2 ${isActive
                       ? "bg-white/20 text-slate-900 shadow-sm"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => onScreenChange(item.id)}
                 >
                   <Icon className="h-4 w-4" />
@@ -308,11 +300,10 @@ export default function Navigation({
             <Button
               variant="ghost"
               size="sm"
-              className={`transition-all duration-200 px-2 ${
-                currentScreen === "account"
+              className={`transition-all duration-200 px-2 ${currentScreen === "account"
                   ? "bg-white/20 text-slate-900"
                   : "text-slate-600 hover:text-slate-900 hover:bg-white/10"
-              }`}
+                }`}
               onClick={() => onScreenChange("account")}
             >
               <User className="h-4 w-4" />
@@ -358,12 +349,12 @@ export default function Navigation({
                     {screen.badge && (
                       <Badge
                         className={`ml-auto transition-colors duration-200 ${isActive
-                            ? theme === "dark"
-                              ? "bg-slate-600 text-slate-200"
-                              : "bg-slate-200 text-slate-700"
-                            : theme === "dark"
-                              ? "bg-red-500 text-white"
-                              : "bg-red-500 text-white"
+                          ? theme === "dark"
+                            ? "bg-slate-600 text-slate-200"
+                            : "bg-slate-200 text-slate-700"
+                          : theme === "dark"
+                            ? "bg-red-500 text-white"
+                            : "bg-red-500 text-white"
                           }`}
                       >
                         {screen.badge}
@@ -456,19 +447,6 @@ export default function Navigation({
               </Button>
             </nav>
           </div>
-                )
-              })}
-              {/* Logout Button */}
-              <Button
-                variant="ghost"
-                className={`w-full justify-start h-8 lg:h-10 text-sm transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20`}
-                onClick={onLogout}
-              >
-                <LogOut className="mr-2 lg:mr-3 h-3 lg:h-4 w-3 lg:w-4" />
-                <span className="font-medium text-xs lg:text-sm">Logout</span>
-              </Button>
-            </nav>
-          </div>
         </div>
       </aside>
     )
@@ -498,12 +476,12 @@ export default function Navigation({
                 {screen.badge && (
                   <Badge
                     className={`ml-auto transition-colors duration-200 text-xs ${isActive
-                        ? theme === "dark"
-                          ? "bg-slate-600 text-slate-200"
-                          : "bg-slate-200 text-slate-700"
-                        : theme === "dark"
-                          ? "bg-red-500 text-white"
-                          : "bg-red-500 text-white"
+                      ? theme === "dark"
+                        ? "bg-slate-600 text-slate-200"
+                        : "bg-slate-200 text-slate-700"
+                      : theme === "dark"
+                        ? "bg-red-500 text-white"
+                        : "bg-red-500 text-white"
                       }`}
                   >
                     {screen.badge}

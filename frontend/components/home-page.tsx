@@ -262,7 +262,7 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                         What Our Customers Say
                     </h3>
                     <p className={`text-base sm:text-lg max-w-2xl mx-auto ${themeColors.textMuted} px-4`}>
-                        Don't just take our word for it. Here's what our satisfied customers have to say.
+                        Don&apos;t just take our word for it. Here&apos;s what our satisfied customers have to say.
                     </p>
                 </div>
 
@@ -279,7 +279,7 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                                     ))}
                                 </div>
                                 <CardDescription className={`${themeColors.textMuted} text-sm leading-relaxed`}>
-                                    "{testimonial.comment}"
+                                    &ldquo;{testimonial.comment}&rdquo;
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-4 sm:p-6 pt-0">

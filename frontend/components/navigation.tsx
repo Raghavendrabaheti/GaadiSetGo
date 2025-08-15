@@ -19,7 +19,7 @@ export default function Navigation({
   currentScreen,
   onScreenChange,
   isMobile,
-  isOpen,
+  isOpen: _isOpen,
   isBottom,
   isHorizontal,
   theme,

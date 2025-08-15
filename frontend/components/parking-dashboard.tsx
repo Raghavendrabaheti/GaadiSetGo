@@ -36,8 +36,10 @@ interface ParkingDashboardProps {
 }
 
 export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
+  console.log('ParkingDashboard component rendered with theme:', theme); // Debug log
+
   const [selectedLocation, setSelectedLocation] = useState("delhi")
-  const [selectedLot, setSelectedLot] = useState<string | null>(null)
+  const [selectedLot, _setSelectedLot] = useState<string | null>(null)
   const [bookingData, setBookingData] = useState({
     vehicleNumber: "",
     startTime: "",
@@ -176,8 +178,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
           <Select value={selectedLocation} onValueChange={setSelectedLocation}>
             <SelectTrigger
               className={`w-full sm:w-48 h-12 sm:h-10 transition-all duration-300 ${theme === "dark"
-                  ? "bg-slate-700 border-slate-600 text-slate-100"
-                  : "bg-white border-slate-300 text-slate-900"
+                ? "bg-slate-700 border-slate-600 text-slate-100"
+                : "bg-white border-slate-300 text-slate-900"
                 }`}
             >
               <MapPin className="mr-2 h-4 w-4" />
@@ -226,8 +228,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                     id="vehicle"
                     placeholder="DL-01-AB-1234"
                     className={`h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
-                        ? "bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
-                        : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                      ? "bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
+                      : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
                       }`}
                     value={bookingData.vehicleNumber}
                     onChange={(e) => setBookingData((prev) => ({ ...prev, vehicleNumber: e.target.value }))}
@@ -242,8 +244,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                       id="start"
                       type="datetime-local"
                       className={`h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
-                          ? "bg-slate-700 border-slate-600 text-slate-100"
-                          : "bg-white border-slate-300 text-slate-900"
+                        ? "bg-slate-700 border-slate-600 text-slate-100"
+                        : "bg-white border-slate-300 text-slate-900"
                         }`}
                       value={bookingData.startTime}
                       onChange={(e) => setBookingData((prev) => ({ ...prev, startTime: e.target.value }))}
@@ -257,8 +259,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                       id="end"
                       type="datetime-local"
                       className={`h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
-                          ? "bg-slate-700 border-slate-600 text-slate-100"
-                          : "bg-white border-slate-300 text-slate-900"
+                        ? "bg-slate-700 border-slate-600 text-slate-100"
+                        : "bg-white border-slate-300 text-slate-900"
                         }`}
                       value={bookingData.endTime}
                       onChange={(e) => setBookingData((prev) => ({ ...prev, endTime: e.target.value }))}
@@ -283,8 +285,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
           <TabsTrigger
             value="available"
             className={`font-medium transition-all duration-300 text-sm sm:text-base ${theme === "dark"
-                ? "data-[state=active]:bg-slate-600 data-[state=active]:text-slate-100"
-                : "data-[state=active]:bg-white data-[state=active]:text-slate-900"
+              ? "data-[state=active]:bg-slate-600 data-[state=active]:text-slate-100"
+              : "data-[state=active]:bg-white data-[state=active]:text-slate-900"
               }`}
           >
             Available Parking
@@ -292,8 +294,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
           <TabsTrigger
             value="bookings"
             className={`font-medium transition-all duration-300 text-sm sm:text-base ${theme === "dark"
-                ? "data-[state=active]:bg-slate-600 data-[state=active]:text-slate-100"
-                : "data-[state=active]:bg-white data-[state=active]:text-slate-900"
+              ? "data-[state=active]:bg-slate-600 data-[state=active]:text-slate-100"
+              : "data-[state=active]:bg-white data-[state=active]:text-slate-900"
               }`}
           >
             My Bookings
@@ -304,8 +306,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
           {/* Search and Filter */}
           <Card
             className={`border-0 shadow-sm transition-all duration-300 ${theme === "dark"
-                ? "bg-gradient-to-r from-slate-800 to-slate-900"
-                : "bg-gradient-to-r from-blue-50 to-purple-50"
+              ? "bg-gradient-to-r from-slate-800 to-slate-900"
+              : "bg-gradient-to-r from-blue-50 to-purple-50"
               }`}
           >
             <CardContent className="p-3 sm:p-4">
@@ -317,16 +319,16 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                   <Input
                     placeholder="Search parking lots..."
                     className={`pl-10 h-12 sm:h-10 text-base sm:text-sm transition-all duration-300 ${theme === "dark"
-                        ? "bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
-                        : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                      ? "bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
+                      : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
                       }`}
                   />
                 </div>
                 <Button
                   variant="outline"
                   className={`h-12 sm:h-10 px-4 sm:px-6 transition-all duration-300 ${theme === "dark"
-                      ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
-                      : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                    ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
+                    : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                     }`}
                 >
                   <Filter className="mr-2 h-4 w-4" />
@@ -430,8 +432,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                       <Button
                         variant="outline"
                         className={`flex-1 h-11 sm:h-10 transition-all duration-300 ${theme === "dark"
-                            ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
-                            : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                          ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
+                          : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                           }`}
                       >
                         <Navigation className="mr-2 h-4 w-4" />
@@ -465,12 +467,12 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                     <Badge
                       variant={booking.status === "active" ? "default" : "secondary"}
                       className={`px-3 py-1 transition-all duration-300 ${booking.status === "active"
-                          ? theme === "dark"
-                            ? "bg-green-600 text-white"
-                            : "bg-green-600 text-white"
-                          : theme === "dark"
-                            ? "bg-slate-600 text-slate-200"
-                            : "bg-slate-200 text-slate-700"
+                        ? theme === "dark"
+                          ? "bg-green-600 text-white"
+                          : "bg-green-600 text-white"
+                        : theme === "dark"
+                          ? "bg-slate-600 text-slate-200"
+                          : "bg-slate-200 text-slate-700"
                         }`}
                     >
                       {booking.status === "active" ? (
@@ -518,8 +520,8 @@ export default function ParkingDashboard({ theme }: ParkingDashboardProps) {
                       <Button
                         variant="outline"
                         className={`flex-1 transition-all duration-300 ${theme === "dark"
-                            ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
-                            : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                          ? "border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-200"
+                          : "border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                           }`}
                       >
                         <Clock className="mr-2 h-4 w-4" />

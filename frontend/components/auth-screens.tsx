@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Eye, EyeOff, Mail, Lock, User, Phone, Chrome, Github, AlertCircle } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 interface AuthScreensProps {
   onLogin: () => void
@@ -19,8 +19,10 @@ interface AuthScreensProps {
 }
 
 export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps) {
+  const { login, register, isLoading: authLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -33,6 +35,10 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (validationErrors[field]) {
       setValidationErrors((prev) => ({ ...prev, [field]: "" }))
+    }
+    // Clear auth error when user starts typing
+    if (authError) {
+      setAuthError(null)
     }
   }
 
@@ -66,7 +72,7 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent, isSignUp: boolean) => {
+  const handleSubmit = async (e: React.FormEvent, isSignUp: boolean) => {
     e.preventDefault()
 
     if (!validateForm(isSignUp)) {
@@ -74,10 +80,40 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
     }
 
     setIsLoading(true)
-    setTimeout(() => {
+    setAuthError(null)
+
+    try {
+      let result;
+
+      if (isSignUp) {
+        // Register user
+        result = await register({
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.name,
+          phone: formData.phone || undefined,
+        })
+      } else {
+        // Login user
+        result = await login(formData.email, formData.password)
+      }
+
+      if (result.success) {
+        // Success - add a small delay to ensure auth context is updated, then redirect
+        console.log('Auth successful, redirecting in 100ms...');
+        setTimeout(() => {
+          onLogin()
+        }, 100)
+      } else {
+        // Show error from API
+        setAuthError(result.error || 'Authentication failed')
+      }
+    } catch (error: unknown) {
+      console.error('Authentication error:', error)
+      setAuthError((error as Error).message || 'An unexpected error occurred')
+    } finally {
       setIsLoading(false)
-      onLogin()
-    }, 2000)
+    }
   }
 
   const getPasswordStrength = () => {
@@ -195,6 +231,14 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
+                {/* Auth Error Display */}
+                {authError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">{authError}</span>
+                  </div>
+                )}
+
                 <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
                   <div className="space-y-2">
                     <Label
@@ -284,9 +328,9 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
                       ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                       : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                       }`}
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                   >
-                    {isLoading ? (
+                    {(isLoading || authLoading) ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                         Signing In...
@@ -309,6 +353,14 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
+                {/* Auth Error Display */}
+                {authError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">{authError}</span>
+                  </div>
+                )}
+
                 <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4">
                   <div className="space-y-2">
                     <Label
@@ -500,9 +552,9 @@ export default function AuthScreens({ onLogin, onBack, theme }: AuthScreensProps
                       ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                       : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                       }`}
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                   >
-                    {isLoading ? (
+                    {(isLoading || authLoading) ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                         Creating Account...

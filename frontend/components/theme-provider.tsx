@@ -27,7 +27,7 @@ export function ThemeProvider({
     children,
     defaultTheme = "system",
     storageKey = "vite-ui-theme",
-    attribute = "class",
+    attribute: _attribute = "class",
     ...props
 }: ThemeProviderProps) {
     const [theme, setTheme] = React.useState<Theme>(
